@@ -1,9 +1,9 @@
 const CACHE_NAME = 'powerlifting-v1';
 const urlsToCache = [
-    '/',
-    'index.html',
-    'app.js',
-    'manifest.json'
+    './',              // Changed from '/' to './'
+    './index.html',    // Made relative
+    './manifest.json'  // Made relative
+    // Removed 'app.js' since you don't have this file
 ];
 
 self.addEventListener('install', event => {
