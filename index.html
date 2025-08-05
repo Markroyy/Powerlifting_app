@@ -100,52 +100,12 @@
 
           const initialData = createInitialData();
 
-          // localStorage-backed state with persistence
-          const [trainingData, setTrainingData] = useState(() => {
-            const saved = localStorage.getItem('powerlifting-training-data');
-            return saved ? JSON.parse(saved) : initialData;
-          });
-          
-          const [selectedLift, setSelectedLift] = useState(() => {
-            const saved = localStorage.getItem('powerlifting-selected-lift');
-            return saved || 'squat';
-          });
-          
-          const [currentBlock, setCurrentBlock] = useState(() => {
-            const saved = localStorage.getItem('powerlifting-current-block');
-            return saved ? parseInt(saved) : 1;
-          });
-          
-          const [completedBlocks, setCompletedBlocks] = useState(() => {
-            const saved = localStorage.getItem('powerlifting-completed-blocks');
-            return saved ? JSON.parse(saved) : [];
-          });
-          
-          const [activeTab, setActiveTab] = useState(() => {
-            const saved = localStorage.getItem('powerlifting-active-tab');
-            return saved || 'training';
-          });
-
-          // Save data to localStorage whenever state changes
-          useEffect(() => {
-            localStorage.setItem('powerlifting-training-data', JSON.stringify(trainingData));
-          }, [trainingData]);
-
-          useEffect(() => {
-            localStorage.setItem('powerlifting-selected-lift', selectedLift);
-          }, [selectedLift]);
-
-          useEffect(() => {
-            localStorage.setItem('powerlifting-current-block', currentBlock.toString());
-          }, [currentBlock]);
-
-          useEffect(() => {
-            localStorage.setItem('powerlifting-completed-blocks', JSON.stringify(completedBlocks));
-          }, [completedBlocks]);
-
-          useEffect(() => {
-            localStorage.setItem('powerlifting-active-tab', activeTab);
-          }, [activeTab]);
+          // State management (using in-memory storage for GitHub Pages compatibility)
+          const [trainingData, setTrainingData] = useState(initialData);
+          const [selectedLift, setSelectedLift] = useState('squat');
+          const [currentBlock, setCurrentBlock] = useState(1);
+          const [completedBlocks, setCompletedBlocks] = useState([]);
+          const [activeTab, setActiveTab] = useState('training');
 
           // Deload detection system
           const analyzeDeloadNeed = useCallback(() => {
@@ -458,16 +418,6 @@
             setTrainingData(freshData);
             setCurrentBlock(1);
             setCompletedBlocks([]);
-            
-            localStorage.removeItem('powerlifting-training-data');
-            localStorage.removeItem('powerlifting-current-block');
-            localStorage.removeItem('powerlifting-completed-blocks');
-            
-            setTimeout(() => {
-              localStorage.setItem('powerlifting-training-data', JSON.stringify(freshData));
-              localStorage.setItem('powerlifting-current-block', '1');
-              localStorage.setItem('powerlifting-completed-blocks', JSON.stringify([]));
-            }, 100);
           };
 
           const updateCurrentMax = (lift, newMax) => {
@@ -612,28 +562,26 @@
 
           const currentLiftData = trainingData[selectedLift];
 
-          return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
-              <div className="max-w-7xl mx-auto">
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 mb-6 border border-white/20">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
-                           <div className="flex items-center gap-3">
-              <Dumbbell className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400" />
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">Block Periodization</h1>
-                <p className="text-sm sm:text-base text-purple-300">Block {currentBlock}</p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                onClick={exportData}
-                className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm"
-              >
-                <Download className="w-3 h-3 sm:w-4 sm:h-4" />
-                Export
-              </button>
-              {Object.values(trainingData).some(lift => 
-                lift.weeks[3].topSingle.weight > 0 && lift.weeks[3].topSingle.actualRpe > 0
+          return React.createElement("div", { className: "min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4" },
+            React.createElement("div", { className: "max-w-7xl mx-auto" },
+              React.createElement("div", { className: "bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 mb-6 border border-white/20" },
+                React.createElement("div", { className: "flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4" },
+                  React.createElement("div", { className: "flex items-center gap-3" },
+                    React.createElement(Dumbbell, { className: "w-6 h-6 sm:w-8 sm:h-8 text-purple-400" }),
+                    React.createElement("div", null,
+                      React.createElement("h1", { className: "text-2xl sm:text-3xl font-bold text-white" }, "Block Periodization"),
+                      React.createElement("p", { className: "text-sm sm:text-base text-purple-300" }, `Block ${currentBlock}`)
+                    )
+                  ),
+                  React.createElement("div", { className: "flex flex-col sm:flex-row gap-2" },
+                    React.createElement("button", {
+                      onClick: exportData,
+                      className: "flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm"
+                    },
+                      React.createElement(Download, { className: "w-3 h-3 sm:w-4 sm:h-4" }),
+                      "Export"
+                    ),
+                    Object.values(trainingData).some(lift =>lift.weeks[3].topSingle.weight > 0 && lift.weeks[3].topSingle.actualRpe > 0
               ) && (
                 <button
                   onClick={completeBlock}
@@ -1208,8 +1156,6 @@ export default PowerliftingApp;
     </script>
 </body>
 </html>
-
-
 
 
 
