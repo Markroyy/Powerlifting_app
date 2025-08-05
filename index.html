@@ -4,26 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Powerlifting Tracker</title>
-    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#6366f1">
-    <link rel="apple-touch-icon" href="icon-192.png">
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Production React -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Tailwind CSS from reliable CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    
+    <!-- Recharts -->
+    <script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
+    
+    <!-- Babel Standalone -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
     
     <script type="text/babel">
         const { useState, useCallback, useEffect } = React;
+        const { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } = Recharts;
         
         // Icon components (replacing lucide-react)
-        const Download = () => <span style={{fontSize: '16px'}}>💾</span>;
-        const Calculator = () => <span style={{fontSize: '16px'}}>🧮</span>;
-        const Dumbbell = () => <span style={{fontSize: '16px'}}>🏋️</span>;
-        const TrendingUp = () => <span style={{fontSize: '16px'}}>📈</span>;
+        const Download = () => React.createElement('span', { style: { fontSize: '16px' } }, '💾');
+        const Calculator = () => React.createElement('span', { style: { fontSize: '16px' } }, '🧮');
+        const Dumbbell = () => React.createElement('span', { style: { fontSize: '16px' } }, '🏋️');
+        const TrendingUp = () => React.createElement('span', { style: { fontSize: '16px' } }, '📈');
         
         const PowerliftingApp = () => {
           // Mike Tuchscherer's RPE Chart (RPE to percentage at different rep ranges)
@@ -1201,6 +1208,7 @@ export default PowerliftingApp;
     </script>
 </body>
 </html>
+
 
 
 
