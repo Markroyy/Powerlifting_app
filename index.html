@@ -4,31 +4,613 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Powerlifting Tracker</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body style="background: #0f172a; color: white; font-family: system-ui; padding: 40px; text-align: center;">
-    <h1>🏋️ Powerlifting Tracker</h1>
-    <p>Testing GitHub Pages...</p>
-    <button onclick="testButton()" style="padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer;">Click Me</button>
+<body>
+    <div id="root"></div>
     
-    <script>
-        function testButton() {
-            alert('JavaScript is working!');
-            document.body.innerHTML += '<p>✅ Button clicked successfully!</p>';
-        }
-    </script>
-</body>
-</html>
+    <script type="text/babel">
+        const { useState, useCallback, useEffect } = React;
+        
+        // Icon components (replacing lucide-react)
+        const Download = () => <span style={{fontSize: '16px'}}>💾</span>;
+        const Calculator = () => <span style={{fontSize: '16px'}}>🧮</span>;
+        const Dumbbell = () => <span style={{fontSize: '16px'}}>🏋️</span>;
+        const TrendingUp = () => <span style={{fontSize: '16px'}}>📈</span>;
+        
+        const PowerliftingApp = () => {
+          // Mike Tuchscherer's RPE Chart (RPE to percentage at different rep ranges)
+          const tuchschererChart = {
+            1: { 6: 0.86, 7: 0.89, 8: 0.92, 9: 0.96, 10: 1.0 },
+            2: { 6: 0.84, 7: 0.87, 8: 0.90, 9: 0.94, 10: 0.97 },
+            3: { 6: 0.81, 7: 0.84, 8: 0.88, 9: 0.91, 10: 0.94 },
+            4: { 6: 0.79, 7: 0.82, 8: 0.85, 9: 0.89, 10: 0.92 },
+            5: { 6: 0.77, 7: 0.80, 8: 0.83, 9: 0.86, 10: 0.89 },
+            6: { 6: 0.75, 7: 0.78, 8: 0.81, 9: 0.84, 10: 0.87 },
+            7: { 6: 0.73, 7: 0.76, 8: 0.79, 9: 0.82, 10: 0.85 },
+            8: { 6: 0.71, 7: 0.74, 8: 0.77, 9: 0.80, 10: 0.83 },
+            9: { 6: 0.69, 7: 0.72, 8: 0.75, 9: 0.78, 10: 0.81 },
+            10: { 6: 0.67, 7: 0.70, 8: 0.73, 9: 0.76, 10: 0.79 }
+          };
 
+          // Create initial training data with calculated weights
+          const createInitialData = () => {
+            const baseData = {
+              squat: {
+                currentMax: 140,
+                weeks: [
+                  { week: 1, topSingle: { rpe: 6, actualReps: 1, actualRpe: 6 }, backoff: { sets: 3, reps: 5, rpe: 6, actualReps: 5, actualRpe: 6 }, notes: '' },
+                  { week: 2, topSingle: { rpe: 7, actualReps: 1, actualRpe: 7 }, backoff: { sets: 3, reps: 4, rpe: 7, actualReps: 4, actualRpe: 7 }, notes: '' },
+                  { week: 3, topSingle: { rpe: 8, actualReps: 1, actualRpe: 8 }, backoff: { sets: 3, reps: 3, rpe: 8, actualReps: 3, actualRpe: 8 }, notes: '' },
+                  { week: 4, topSingle: { rpe: 9, actualReps: 1, actualRpe: 9 }, backoff: { sets: 3, reps: 3, rpe: 9, actualReps: 3, actualRpe: 9 }, notes: '' }
+                ]
+              },
+              bench: {
+                currentMax: 100,
+                weeks: [
+                  { week: 1, topSingle: { rpe: 6, actualReps: 1, actualRpe: 6 }, backoff: { sets: 3, reps: 5, rpe: 6, actualReps: 5, actualRpe: 6 }, notes: '' },
+                  { week: 2, topSingle: { rpe: 7, actualReps: 1, actualRpe: 7 }, backoff: { sets: 3, reps: 4, rpe: 7, actualReps: 4, actualRpe: 7 }, notes: '' },
+                  { week: 3, topSingle: { rpe: 8, actualReps: 1, actualRpe: 8 }, backoff: { sets: 3, reps: 3, rpe: 8, actualReps: 3, actualRpe: 8 }, notes: '' },
+                  { week: 4, topSingle: { rpe: 9, actualReps: 1, actualRpe: 9 }, backoff: { sets: 3, reps: 3, rpe: 9, actualReps: 3, actualRpe: 9 }, notes: '' }
+                ]
+              },
+              deadlift: {
+                currentMax: 180,
+                weeks: [
+                  { week: 1, topSingle: { rpe: 6, actualReps: 1, actualRpe: 6 }, backoff: { sets: 3, reps: 5, rpe: 6, actualReps: 5, actualRpe: 6 }, notes: '' },
+                  { week: 2, topSingle: { rpe: 7, actualReps: 1, actualRpe: 7 }, backoff: { sets: 3, reps: 4, rpe: 7, actualReps: 4, actualRpe: 7 }, notes: '' },
+                  { week: 3, topSingle: { rpe: 8, actualReps: 1, actualRpe: 8 }, backoff: { sets: 3, reps: 3, rpe: 8, actualReps: 3, actualRpe: 8 }, notes: '' },
+                  { week: 4, topSingle: { rpe: 9, actualReps: 1, actualRpe: 9 }, backoff: { sets: 3, reps: 3, rpe: 9, actualReps: 3, actualRpe: 9 }, notes: '' }
+                ]
+              }
+            };
 
+            // Auto-calculate initial weights for all lifts
+            Object.keys(baseData).forEach(lift => {
+              const currentMax = baseData[lift].currentMax;
+              baseData[lift].weeks = baseData[lift].weeks.map(week => ({
+                ...week,
+                topSingle: {
+                  ...week.topSingle,
+                  weight: Math.round((currentMax * tuchschererChart[1][week.topSingle.rpe]) / 2.5) * 2.5
+                },
+                backoff: {
+                  ...week.backoff,
+                  weight: Math.round((currentMax * tuchschererChart[week.backoff.reps][week.backoff.rpe]) / 2.5) * 2.5
+                }
+              }));
+            });
 
+            return baseData;
+          };
 
+          const initialData = createInitialData();
 
+          // localStorage-backed state with persistence
+          const [trainingData, setTrainingData] = useState(() => {
+            const saved = localStorage.getItem('powerlifting-training-data');
+            return saved ? JSON.parse(saved) : initialData;
+          });
+          
+          const [selectedLift, setSelectedLift] = useState(() => {
+            const saved = localStorage.getItem('powerlifting-selected-lift');
+            return saved || 'squat';
+          });
+          
+          const [currentBlock, setCurrentBlock] = useState(() => {
+            const saved = localStorage.getItem('powerlifting-current-block');
+            return saved ? parseInt(saved) : 1;
+          });
+          
+          const [completedBlocks, setCompletedBlocks] = useState(() => {
+            const saved = localStorage.getItem('powerlifting-completed-blocks');
+            return saved ? JSON.parse(saved) : [];
+          });
+          
+          const [activeTab, setActiveTab] = useState(() => {
+            const saved = localStorage.getItem('powerlifting-active-tab');
+            return saved || 'training';
+          });
 
+          // Save data to localStorage whenever state changes
+          useEffect(() => {
+            localStorage.setItem('powerlifting-training-data', JSON.stringify(trainingData));
+          }, [trainingData]);
 
+          useEffect(() => {
+            localStorage.setItem('powerlifting-selected-lift', selectedLift);
+          }, [selectedLift]);
 
+          useEffect(() => {
+            localStorage.setItem('powerlifting-current-block', currentBlock.toString());
+          }, [currentBlock]);
 
+          useEffect(() => {
+            localStorage.setItem('powerlifting-completed-blocks', JSON.stringify(completedBlocks));
+          }, [completedBlocks]);
 
+          useEffect(() => {
+            localStorage.setItem('powerlifting-active-tab', activeTab);
+          }, [activeTab]);
 
+          // Deload detection system
+          const analyzeDeloadNeed = useCallback(() => {
+            const analysis = {
+              needsDeload: false,
+              severity: 'none',
+              reasons: [],
+              suggestions: [],
+              affectedLifts: []
+            };
+
+            ['squat', 'bench', 'deadlift'].forEach(lift => {
+              const weeks = trainingData[lift].weeks;
+              const recentPerformance = [];
+              
+              weeks.forEach((week, weekIndex) => {
+                if (week.topSingle.weight && week.topSingle.actualRpe) {
+                  recentPerformance.push({
+                    week: weekIndex + 1,
+                    targetRPE: week.topSingle.rpe,
+                    actualRPE: week.topSingle.actualRpe,
+                    variance: week.topSingle.actualRpe - week.topSingle.rpe,
+                    weight: week.topSingle.weight
+                  });
+                }
+                if (week.backoff.weight && week.backoff.actualRpe) {
+                  recentPerformance.push({
+                    week: weekIndex + 1,
+                    targetRPE: week.backoff.rpe,
+                    actualRPE: week.backoff.actualRpe,
+                    variance: week.backoff.actualRpe - week.backoff.rpe,
+                    weight: week.backoff.weight,
+                    type: 'backoff'
+                  });
+                }
+              });
+
+              if (recentPerformance.length >= 2) {
+                const avgVariance = recentPerformance.reduce((sum, p) => sum + p.variance, 0) / recentPerformance.length;
+                const recentVariance = recentPerformance.slice(-3).reduce((sum, p) => sum + p.variance, 0) / Math.min(3, recentPerformance.slice(-3).length);
+                
+                const consistentOvershoot = recentPerformance.slice(-2).every(p => p.variance > 0.5);
+                const highVariance = avgVariance > 0.7;
+                const veryHighVariance = avgVariance > 1.2;
+                const escalatingRPEs = recentVariance > avgVariance + 0.3;
+
+                if (veryHighVariance) {
+                  analysis.needsDeload = true;
+                  analysis.severity = 'severe';
+                  analysis.reasons.push(`${lift.charAt(0).toUpperCase() + lift.slice(1)} RPEs averaging +${avgVariance.toFixed(1)} above target`);
+                  analysis.affectedLifts.push(lift);
+                } else if (highVariance && consistentOvershoot) {
+                  analysis.needsDeload = true;
+                  if (analysis.severity === 'none') analysis.severity = 'moderate';
+                  analysis.reasons.push(`${lift.charAt(0).toUpperCase() + lift.slice(1)} consistently overshooting RPE targets`);
+                  analysis.affectedLifts.push(lift);
+                } else if (escalatingRPEs && avgVariance > 0.4) {
+                  analysis.needsDeload = true;
+                  if (analysis.severity === 'none') analysis.severity = 'mild';
+                  analysis.reasons.push(`${lift.charAt(0).toUpperCase() + lift.slice(1)} showing signs of accumulating fatigue`);
+                  analysis.affectedLifts.push(lift);
+                }
+              }
+            });
+
+            if (analysis.needsDeload) {
+              switch (analysis.severity) {
+                case 'severe':
+                  analysis.suggestions = [
+                    'Take a full deload week (50-60% of current weights)',
+                    'Reduce volume by 50% for all lifts',
+                    'Focus on technique and mobility work',
+                    'Consider taking 2-3 complete rest days'
+                  ];
+                  break;
+                case 'moderate':
+                  analysis.suggestions = [
+                    'Deload affected lifts to 70% of current weights',
+                    'Reduce volume by 30-40%',
+                    'Maintain accessory work but reduce intensity',
+                    'Prioritize sleep and recovery'
+                  ];
+                  break;
+                case 'mild':
+                  analysis.suggestions = [
+                    'Reduce intensity by 10-15% for 1 week',
+                    'Keep same weights but aim for RPE 7-8 instead of 8-9',
+                    'Add an extra rest day this week',
+                    'Monitor closely - full deload if RPEs don\'t improve'
+                  ];
+                  break;
+              }
+            }
+
+            return analysis;
+          }, [trainingData]);
+
+          const deloadAnalysis = analyzeDeloadNeed();
+
+          // Calculate weight based on current max and RPE using Tuchscherer chart
+          const calculateWeight = useCallback((currentMax, rpe, reps = 1) => {
+            const repData = tuchschererChart[Math.min(reps, 10)];
+            if (!repData) return 0;
+            
+            const percentage = repData[rpe];
+            if (!percentage) return 0;
+            
+            const calculatedWeight = currentMax * percentage;
+            return Math.round(calculatedWeight / 2.5) * 2.5;
+          }, []);
+
+          // Calculate estimated 1RM using Tuchscherer RPE chart
+          const calculateEstimated1RM = useCallback((weight, reps, rpe) => {
+            if (!weight || !reps || !rpe) return 0;
+            
+            const repData = tuchschererChart[Math.min(reps, 10)];
+            if (!repData) return 0;
+            
+            const percentage = repData[rpe];
+            if (!percentage) return 0;
+            
+            const estimated1RM = weight / percentage;
+            return Math.round(estimated1RM / 2.5) * 2.5;
+          }, []);
+
+          // Calculate backoff weight based on estimated 1RM from top single
+          const calculateBackoffWeight = useCallback((topSingleWeight, topSingleReps, topSingleRpe, backoffReps, backoffRpe) => {
+            if (!topSingleWeight || !topSingleReps || !topSingleRpe) return 0;
+            
+            const estimated1RM = calculateEstimated1RM(topSingleWeight, topSingleReps, topSingleRpe);
+            return calculateWeight(estimated1RM, backoffRpe, backoffReps);
+          }, [calculateEstimated1RM, calculateWeight]);
+
+          const calculateWeeklyEstimated1RM = useCallback((week) => {
+            const estimates = [];
+            
+            if (week.topSingle.weight && week.topSingle.actualReps && week.topSingle.actualRpe) {
+              estimates.push(calculateEstimated1RM(week.topSingle.weight, week.topSingle.actualReps, week.topSingle.actualRpe));
+            }
+            
+            if (week.backoff.weight && week.backoff.actualReps && week.backoff.actualRpe) {
+              estimates.push(calculateEstimated1RM(week.backoff.weight, week.backoff.actualReps, week.backoff.actualRpe));
+            }
+            
+            if (estimates.length === 0) return 0;
+            
+            if (estimates.length === 2) {
+              return Math.round(((estimates[0] * 0.7) + (estimates[1] * 0.3)) * 2) / 2;
+            }
+            
+            return estimates[0];
+          }, [calculateEstimated1RM]);
+
+          // Complete current block and start new one with progressed weights
+          const completeBlock = () => {
+            const blockData = {
+              blockNumber: currentBlock,
+              completedDate: new Date().toISOString(),
+              lifts: {}
+            };
+
+            ['squat', 'bench', 'deadlift'].forEach(lift => {
+              const currentMax = trainingData[lift].currentMax;
+              
+              const currentWeek1 = calculateWeight(currentMax, 6, 1);
+              const currentWeek2 = calculateWeight(currentMax, 7, 1);
+              const currentWeek3 = calculateWeight(currentMax, 8, 1);
+              const currentWeek4 = calculateWeight(currentMax, 9, 1);
+              
+              const weeks = trainingData[lift].weeks;
+              const performanceData = [];
+              
+              weeks.forEach((week, index) => {
+                if (week.topSingle.weight && week.topSingle.actualReps && week.topSingle.actualRpe) {
+                  performanceData.push({
+                    week: index + 1,
+                    type: 'topSingle',
+                    targetRPE: week.topSingle.rpe,
+                    actualRPE: week.topSingle.actualRpe,
+                    rpeVariance: week.topSingle.actualRpe - week.topSingle.rpe
+                  });
+                }
+                
+                if (week.backoff.weight && week.backoff.actualReps && week.backoff.actualRpe) {
+                  performanceData.push({
+                    week: index + 1,
+                    type: 'backoff',
+                    targetRPE: week.backoff.rpe,
+                    actualRPE: week.backoff.actualRpe,
+                    rpeVariance: week.backoff.actualRpe - week.backoff.rpe
+                  });
+                }
+              });
+              
+              let newTrainingMax;
+              let avgRPEVariance = 0;
+              
+              if (performanceData.length > 0) {
+                avgRPEVariance = performanceData.reduce((sum, data) => sum + data.rpeVariance, 0) / performanceData.length;
+                
+                const targetWeek1Weight = currentWeek2;
+                const baseNewMax = Math.round((targetWeek1Weight / tuchschererChart[1][6]) / 2.5) * 2.5;
+                
+                let liftProgressionFactor = 1.0;
+                switch(lift) {
+                  case 'squat':
+                    liftProgressionFactor = 1.035;
+                    break;
+                  case 'bench':
+                    liftProgressionFactor = 1.015;
+                    break;
+                  case 'deadlift':
+                    liftProgressionFactor = 1.04;
+                    break;
+                }
+                
+                let adjustmentFactor = liftProgressionFactor;
+                if (avgRPEVariance > 0.3) {
+                  if (avgRPEVariance > 1.0) {
+                    adjustmentFactor = 0.95;
+                  } else if (avgRPEVariance > 0.7) {
+                    adjustmentFactor = 0.98;
+                  } else {
+                    adjustmentFactor = 1.0;
+                  }
+                } else if (avgRPEVariance < -0.3) {
+                  const extraProgression = Math.abs(avgRPEVariance) * 0.01;
+                  adjustmentFactor = liftProgressionFactor + extraProgression;
+                }
+                
+                newTrainingMax = Math.round((baseNewMax * adjustmentFactor) / 2.5) * 2.5;
+                
+                let maxIncrease, maxDecrease;
+                switch(lift) {
+                  case 'squat':
+                    maxIncrease = currentMax + 10;
+                    maxDecrease = Math.max(currentMax - 10, currentMax * 0.9);
+                    break;
+                  case 'bench':
+                    maxIncrease = currentMax + 2.5;
+                    maxDecrease = Math.max(currentMax - 5, currentMax * 0.9);
+                    break;
+                  case 'deadlift':
+                    maxIncrease = currentMax + 10;
+                    maxDecrease = Math.max(currentMax - 12.5, currentMax * 0.9);
+                    break;
+                  default:
+                    maxIncrease = currentMax + 2.5;
+                    maxDecrease = Math.max(currentMax - 5, currentMax * 0.9);
+                }
+                
+                newTrainingMax = Math.max(maxDecrease, Math.min(maxIncrease, newTrainingMax));
+                
+              } else {
+                let conservativeIncrease;
+                switch(lift) {
+                  case 'squat':
+                    conservativeIncrease = 5;
+                    break;
+                  case 'bench':
+                    conservativeIncrease = 1.25;
+                    break;
+                  case 'deadlift':
+                    conservativeIncrease = 5;
+                    break;
+                  default:
+                    conservativeIncrease = 1.25;
+                }
+                
+                const targetWeek1Weight = currentWeek2;
+                newTrainingMax = Math.round((targetWeek1Weight / tuchschererChart[1][6]) / 2.5) * 2.5;
+                newTrainingMax = Math.round((newTrainingMax + conservativeIncrease) / 2.5) * 2.5;
+              }
+              
+              const newWeek1 = calculateWeight(newTrainingMax, 6, 1);
+              const newWeek2 = calculateWeight(newTrainingMax, 7, 1);
+              const newWeek3 = calculateWeight(newTrainingMax, 8, 1);
+              const newWeek4 = calculateWeight(newTrainingMax, 9, 1);
+              
+              blockData.lifts[lift] = {
+                oldMax: currentMax,
+                newMax: newTrainingMax,
+                progression: newTrainingMax - currentMax,
+                avgRPEVariance: avgRPEVariance,
+                performanceData: performanceData,
+                oldWeights: { week1: currentWeek1, week2: currentWeek2, week3: currentWeek3, week4: currentWeek4 },
+                newWeights: { week1: newWeek1, week2: newWeek2, week3: newWeek3, week4: newWeek4 }
+              };
+            });
+
+            setCompletedBlocks(prev => [...prev, blockData]);
+            
+            const newTrainingData = createInitialData();
+            Object.keys(newTrainingData).forEach(lift => {
+              newTrainingData[lift].currentMax = blockData.lifts[lift].newMax;
+              newTrainingData[lift].weeks = newTrainingData[lift].weeks.map(week => ({
+                ...week, 
+                topSingle: { ...week.topSingle, weight: calculateWeight(blockData.lifts[lift].newMax, week.topSingle.rpe, 1) },
+                backoff: { ...week.backoff, weight: calculateWeight(blockData.lifts[lift].newMax, week.backoff.rpe, week.backoff.reps) },
+                notes: ''
+              }));
+            });
+            
+            setTrainingData(newTrainingData);
+            setCurrentBlock(prev => prev + 1);
+          };
+
+          const resetProgram = () => {
+            const freshData = createInitialData();
+            setTrainingData(freshData);
+            setCurrentBlock(1);
+            setCompletedBlocks([]);
+            
+            localStorage.removeItem('powerlifting-training-data');
+            localStorage.removeItem('powerlifting-current-block');
+            localStorage.removeItem('powerlifting-completed-blocks');
+            
+            setTimeout(() => {
+              localStorage.setItem('powerlifting-training-data', JSON.stringify(freshData));
+              localStorage.setItem('powerlifting-current-block', '1');
+              localStorage.setItem('powerlifting-completed-blocks', JSON.stringify([]));
+            }, 100);
+          };
+
+          const updateCurrentMax = (lift, newMax) => {
+            setTrainingData(prev => ({
+              ...prev,
+              [lift]: { ...prev[lift], currentMax: parseInt(newMax) || 0 }
+            }));
+          };
+
+          const updateWeight = (lift, weekIndex, exercise, field, newValue) => {
+            setTrainingData(prev => ({
+              ...prev,
+              [lift]: {
+                ...prev[lift],
+                weeks: prev[lift].weeks.map((week, index) => 
+                  index === weekIndex 
+                    ? {
+                        ...week,
+                        [exercise]: {
+                          ...week[exercise],
+                          [field]: field === 'weight' ? (parseFloat(newValue) || 0) : (parseInt(newValue) || 0)
+                        }
+                      }
+                    : week
+                )
+              }
+            }));
+          };
+
+          const updateNotes = (lift, weekIndex, newNotes) => {
+            setTrainingData(prev => ({
+              ...prev,
+              [lift]: {
+                ...prev[lift],
+                weeks: prev[lift].weeks.map((week, index) => 
+                  index === weekIndex 
+                    ? { ...week, notes: newNotes }
+                    : week
+                )
+              }
+            }));
+          };
+
+          const autoCalculateWeights = (lift) => {
+            const currentMax = trainingData[lift].currentMax;
+            setTrainingData(prev => ({
+              ...prev,
+              [lift]: {
+                ...prev[lift],
+                weeks: prev[lift].weeks.map(week => ({
+                  ...week,
+                  topSingle: { ...week.topSingle, weight: calculateWeight(currentMax, week.topSingle.rpe, 1) },
+                  backoff: { ...week.backoff, weight: calculateWeight(currentMax, week.backoff.rpe, week.backoff.reps) }
+                }))
+              }
+            }));
+          };
+
+          const exportData = () => {
+            const exportObj = {
+              trainingData,
+              currentBlock,
+              completedBlocks,
+              selectedLift,
+              activeTab,
+              exportDate: new Date().toISOString(),
+              programName: "Block Periodization Powerlifting Template",
+              version: "1.0"
+            };
+            
+            const dataStr = JSON.stringify(exportObj, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `powerlifting-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          };
+
+          const importData = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              try {
+                const importedData = JSON.parse(e.target.result);
+                if (importedData.trainingData && importedData.currentBlock !== undefined) {
+                  setTrainingData(importedData.trainingData);
+                  setCurrentBlock(importedData.currentBlock);
+                  setCompletedBlocks(importedData.completedBlocks || []);
+                  if (importedData.selectedLift) setSelectedLift(importedData.selectedLift);
+                  if (importedData.activeTab) setActiveTab(importedData.activeTab);
+                  alert('Data imported successfully!');
+                } else {
+                  alert('Invalid backup file format.');
+                }
+              } catch (error) {
+                alert('Error reading backup file.');
+              }
+            };
+            reader.readAsText(file);
+          };
+
+          const prepareChartData = () => {
+            const chartData = [];
+            
+            completedBlocks.forEach((block) => {
+              for (let weekNum = 1; weekNum <= 4; weekNum++) {
+                chartData.push({
+                  week: `B${block.blockNumber}W${weekNum}`,
+                  blockNumber: block.blockNumber,
+                  weekNumber: weekNum,
+                  squat: weekNum === 4 ? block.lifts.squat.oldWeights?.week4 || null : null,
+                  bench: weekNum === 4 ? block.lifts.bench.oldWeights?.week4 || null : null,
+                  deadlift: weekNum === 4 ? block.lifts.deadlift.oldWeights?.week4 || null : null
+                });
+              }
+            });
+            
+            for (let weekNum = 1; weekNum <= 4; weekNum++) {
+              const weekData = { 
+                week: `B${currentBlock}W${weekNum}`,
+                blockNumber: currentBlock,
+                weekNumber: weekNum
+              };
+              
+              ['squat', 'bench', 'deadlift'].forEach(lift => {
+                const week = trainingData[lift].weeks[weekNum - 1];
+                const estimate = calculateWeeklyEstimated1RM(week);
+                weekData[lift] = estimate > 0 ? estimate : null;
+              });
+              
+              chartData.push(weekData);
+            }
+            
+            return chartData;
+          };
+
+          const currentLiftData = trainingData[selectedLift];
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
+              <div className="max-w-7xl mx-auto">
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 mb-6 border border-white/20">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+                    <div className="flex items-center gap-
 
 
 
